@@ -1,0 +1,85 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Development philosophy and UI guidelines for the Offline Macro Tracker app
+globs:
+  - app/(tabs)/**
+alwaysApply: true
+---
+
+# 🧭 Macro Tracker – Cursor Rule
+
+This project prioritizes a simple, distraction-free experience for tracking macros (calories and protein). Use the following guidelines when building features or making design decisions:
+
+---
+
+## 💡 General Principles
+
+- Always clarify intent before building new features.
+- Simplicity beats complexity. Avoid unnecessary buttons, toggles, or flows.
+- New features must serve a clear, daily-use purpose for the user.
+
+---
+
+## 🎨 Theming & Design
+
+- Default to **dark mode**, but support **system theme switching**.
+- Use a clean **blue/black palette**. Accent color is a deep, easy-on-the-eyes blue (`#3b82f6`).
+- All text and placeholder inputs must remain readable in both themes.
+- Prioritize minimal UI. Avoid clutter or visual distractions.
+
+---
+
+## 🧑‍💻 Input & Interaction
+
+- Block empty or non-numeric input quietly (no alerts or toasts).
+- Do **not** autofocus between inputs — assume multi-step entries.
+- Dismiss the keyboard on:
+  - Tapping outside input fields
+  - Submitting an entry
+
+---
+
+## 💾 Storage & Data Philosophy
+
+- Store **multiple entries per day** with timestamps.
+- Retain **daily totals only** for past days (individual logs should be discarded after the day ends).
+- Avoid saving unnecessary data or complex structures unless explicitly required for a feature.
+
+---
+
+## 📋 UX Behavior
+
+- Do not use toast confirmations unless there's an error.
+- Assume users prefer no interruptions or extra feedback.
+- Editing and deleting entries should be supported, but implemented only if explicitly prioritized.
+
+---
+
+## 🧱 Extensibility
+
+- Design with future support for:
+  - Daily summaries across days
+  - Lightweight charting components (but not implemented yet)
+- Store historical data in compact, date-keyed format for future graphing.
+
+---
+
+## 🧪 Dev & Testing Practices
+
+- App must be fully testable via **Expo Go**
+- Use **AltStore** for iOS sideloading
+- Prefer Expo Cloud Builds (`npx expo build:ios`) for .ipa generation
+
+---
+
+## 🔐 File & Component Organization
+
+- Keep logic for each tab within `app/(tabs)/`
+- Optional shared logic or utils can go in a `lib/` or `utils/` folder if needed later
+
+---
+
