@@ -1,75 +1,164 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  FlatList,
+  Keyboard,
+  TouchableWithoutFeedback,
+  useColorScheme,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+interface Entry {
+  id: string;
+  calories: number;
+  protein: number;
+  timestamp: string;
+}
 
 export default function HomeScreen() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const [calories, setCalories] = useState('');
+  const [protein, setProtein] = useState('');
+  const [entries, setEntries] = useState<Entry[]>([]);
+
+  const backgroundColor = isDark ? '#0a0a12' : '#f8f9fa';
+  const textColor = isDark ? '#ffffff' : '#000000';
+  const inputBg = isDark ? '#1e1e2a' : '#ffffff';
+  const blue = '#3b82f6';
+
+  const loadEntries = async () => {
+    const todayKey = getTodayKey();
+    const data = await AsyncStorage.getItem(todayKey);
+    if (data) {
+      setEntries(JSON.parse(data));
+    }
+  };
+
+  const saveEntries = async (newEntries: Entry[]) => {
+    const todayKey = getTodayKey();
+    await AsyncStorage.setItem(todayKey, JSON.stringify(newEntries));
+  };
+
+  const getTodayKey = () => {
+    const today = new Date();
+    return `entries-${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  };
+
+  useEffect(() => {
+    loadEntries();
+  }, []);
+
+  const handleSubmit = () => {
+    const cal = parseFloat(calories);
+    const pro = parseFloat(protein);
+    if ((!calories && !protein) || isNaN(cal) || isNaN(pro)) return;
+
+    const newEntry: Entry = {
+      id: Date.now().toString(),
+      calories: calories ? cal : 0,
+      protein: protein ? pro : 0,
+      timestamp: new Date().toLocaleTimeString(),
+    };
+
+    const updated = [...entries, newEntry];
+    setEntries(updated);
+    saveEntries(updated);
+
+    setCalories('');
+    setProtein('');
+    Keyboard.dismiss();
+  };
+
+  const totalCalories = entries.reduce((sum, e) => sum + e.calories, 0);
+  const totalProtein = entries.reduce((sum, e) => sum + e.protein, 0);
+
+  const EntryItem = ({ item }: { item: Entry }) => (
+    <View style={[styles.entry, { backgroundColor: inputBg }]}>
+      <Text style={{ color: textColor }}>
+        {item.timestamp}: {item.calories} cal, {item.protein}g protein
+      </Text>
+    </View>
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={[styles.container, { backgroundColor }]}
+      >
+        <Text style={[styles.title, { color: textColor }]}>Macro Tracker</Text>
+
+        <TextInput
+          style={[styles.input, { backgroundColor: inputBg, color: textColor }]}
+          keyboardType="numeric"
+          placeholder="Calories"
+          placeholderTextColor={isDark ? '#999' : '#666'}
+          value={calories}
+          onChangeText={setCalories}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+
+        <TextInput
+          style={[styles.input, { backgroundColor: inputBg, color: textColor }]}
+          keyboardType="numeric"
+          placeholder="Protein (g)"
+          placeholderTextColor={isDark ? '#999' : '#666'}
+          value={protein}
+          onChangeText={setProtein}
+        />
+
+        <Button title="Add Entry" onPress={handleSubmit} color={blue} />
+
+        <View style={styles.summary}>
+          <Text style={{ color: textColor, marginTop: 20 }}>
+            Total Today: {totalCalories} cal / {totalProtein}g protein
+          </Text>
+        </View>
+
+        <FlatList
+          data={entries}
+          keyExtractor={(item) => item.id}
+          renderItem={EntryItem}
+          style={{ marginTop: 20, width: '100%' }}
+        />
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#444',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  summary: {
+    marginTop: 10,
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  entry: {
+    padding: 12,
+    marginVertical: 4,
+    borderRadius: 8,
   },
 });
